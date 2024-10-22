@@ -55,6 +55,7 @@ async function performScraping() {
     await appendFile(outputFile, text, fileWrite);
     const notes = note.find("dt");
     if (notes.length) {
+      let overrides = false;
       let content = "";
       notes.each((index, element) => {
         let initial = "\t * @";
@@ -62,12 +63,17 @@ async function performScraping() {
         else if ($(element).text() === "Throws:") initial += "throws ";
         else if ($(element).text() === "Returns:") initial += "return ";
 
-        const ddElements = $(element).nextUntil("dt", "dd");
-        ddElements.each((_, ddElement) => {
-          content += initial + $(ddElement).text().replace(/\s*-\s*/g, " ") + "\n";
-        });
+        if ($(element).text() === "Overrides:") {
+          overrides = true;
+        } else {
+          const ddElements = $(element).nextUntil("dt", "dd");
+          ddElements.each((_, ddElement) => {
+            content += initial + $(ddElement).text().replace(/\s*-\s*/g, " ") + "\n";
+          });
+        }
       });
-      content = " * \n\t" + content.slice(1, -1) + "\n\t */\n\t";
+      if (overrides) content = content.slice(1, -1) + " */\n\t@Overrides\n\t";
+      else content = " * \n\t" + content.slice(1, -1) + "\n\t */\n\t";
       await appendFile(outputFile, content, fileWrite);
     } else {
       await appendFile(outputFile, " */\n\t", fileWrite);
